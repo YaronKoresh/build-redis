@@ -75,12 +75,14 @@ jobs:
           msystem: MINGW64
           update: true
           install: >-
+            pkg-config
             git
             make
             gcc
             tar
             wget
             unzip
+            python3
 
       - name: Build on Windows
         if: matrix.target_os == 'windows'
