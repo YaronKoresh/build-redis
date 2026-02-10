@@ -41,6 +41,7 @@ jobs:
           else
             tar xvzf "$filename"
           fi
+          cd */
           make
           strip src/redis-server
           mkdir ../bin
@@ -58,6 +59,7 @@ jobs:
           else
             tar xvzf "$filename"
           fi
+          cd */
           make
           strip src/redis-server
           mkdir ../bin
@@ -89,8 +91,8 @@ jobs:
           else
             tar xvzf "$filename"
           fi
+          cd */
           make MALLOC=libc CFLAGS="-O3"
-          
           mkdir ../bin
           cp src/redis-server.exe ../bin/${{ matrix.artifact_name }}
 
