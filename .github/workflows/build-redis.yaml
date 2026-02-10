@@ -52,7 +52,7 @@ jobs:
 
       - name: Setup MSYS2 (Windows)
         if: matrix.target_os == 'windows'
-        uses: msys2/setup-msys2@v2.30
+        uses: msys2/setup-msys2@v2.30.0
         with:
           msystem: MINGW64
           update: true
@@ -93,7 +93,7 @@ jobs:
           path: artifacts
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2.5
+        uses: softprops/action-gh-release@v2.5.0
         with:
           tag_name: v${{ inputs.redis_version }}
           name: Redis ${{ inputs.redis_version }} Binaries
