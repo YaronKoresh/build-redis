@@ -6,6 +6,7 @@ on:
       redis_version:
         description: 'Redis version to build'
         required: true
+        default: '8.2.4'
 
 jobs:
   build:
@@ -71,7 +72,7 @@ jobs:
           tar xvzf redis-${{ inputs.redis_version }}.tar.gz
           cd redis-${{ inputs.redis_version }}
           
-          make MALLOC=libc
+          make MALLOC=libc CFLAGS="-O3"
           
           mkdir ../bin
           cp src/redis-server.exe ../bin/${{ matrix.artifact_name }}
