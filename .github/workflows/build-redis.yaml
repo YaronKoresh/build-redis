@@ -32,10 +32,15 @@ jobs:
       - name: Build on Linux
         if: matrix.target_os == 'linux'
         run: |
-          wget ${{ inputs.redis_url }} -O redis-source.tar.gz
-          mkdir redis-source
-          tar xvzf redis-source.tar.gz -C redis-source --strip-components=1
-          cd redis-source
+          mkdir redis_build
+          cd redis_build
+          wget ${{ inputs.redis_url }}
+          filename=$(basename "${{ inputs.redis_url }}")
+          if [[ "$filename" == *.zip ]]; then
+            unzip "$filename"
+          else
+            tar xvzf "$filename"
+          fi
           make
           strip src/redis-server
           mkdir ../bin
@@ -44,10 +49,15 @@ jobs:
       - name: Build on macOS
         if: matrix.target_os == 'macos'
         run: |
-          wget ${{ inputs.redis_url }} -O redis-source.tar.gz
-          mkdir redis-source
-          tar xvzf redis-source.tar.gz -C redis-source --strip-components=1
-          cd redis-source
+          mkdir redis_build
+          cd redis_build
+          wget ${{ inputs.redis_url }}
+          filename=$(basename "${{ inputs.redis_url }}")
+          if [[ "$filename" == *.zip ]]; then
+            unzip "$filename"
+          else
+            tar xvzf "$filename"
+          fi
           make
           strip src/redis-server
           mkdir ../bin
@@ -70,10 +80,15 @@ jobs:
         if: matrix.target_os == 'windows'
         shell: msys2 {0}
         run: |
-          wget ${{ inputs.redis_url }} -O redis-source.tar.gz
-          mkdir redis-source
-          tar xvzf redis-source.tar.gz -C redis-source --strip-components=1
-          cd redis-source
+          mkdir redis_build
+          cd redis_build
+          wget ${{ inputs.redis_url }}
+          filename=$(basename "${{ inputs.redis_url }}")
+          if [[ "$filename" == *.zip ]]; then
+            unzip "$filename"
+          else
+            tar xvzf "$filename"
+          fi
           make MALLOC=libc CFLAGS="-O3"
           
           mkdir ../bin
