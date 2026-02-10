@@ -1,0 +1,105 @@
+name: Build Redis Binaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      redis_version:
+        description: 'Redis version to build'
+        required: true
+
+jobs:
+  build:
+    name: Build Redis for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: redis-server-linux
+            target_os: linux
+          - os: macos-latest
+            artifact_name: redis-server-macos
+            target_os: macos
+          - os: windows-latest
+            artifact_name: redis-server.exe
+            target_os: windows
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build on Linux
+        if: matrix.target_os == 'linux'
+        run: |
+          wget http://download.redis.io/releases/redis-${{ inputs.redis_version }}.tar.gz
+          tar xvzf redis-${{ inputs.redis_version }}.tar.gz
+          cd redis-${{ inputs.redis_version }}
+          make
+          strip src/redis-server
+          mkdir ../bin
+          cp src/redis-server ../bin/${{ matrix.artifact_name }}
+
+      - name: Build on macOS
+        if: matrix.target_os == 'macos'
+        run: |
+          wget http://download.redis.io/releases/redis-${{ inputs.redis_version }}.tar.gz
+          tar xvzf redis-${{ inputs.redis_version }}.tar.gz
+          cd redis-${{ inputs.redis_version }}
+          make
+          strip src/redis-server
+          mkdir ../bin
+          cp src/redis-server ../bin/${{ matrix.artifact_name }}
+
+      - name: Setup MSYS2 (Windows)
+        if: matrix.target_os == 'windows'
+        uses: msys2/setup-msys2@v2.30
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            git
+            make
+            gcc
+            tar
+            wget
+
+      - name: Build on Windows
+        if: matrix.target_os == 'windows'
+        shell: msys2 {0}
+        run: |
+          wget http://download.redis.io/releases/redis-${{ inputs.redis_version }}.tar.gz
+          tar xvzf redis-${{ inputs.redis_version }}.tar.gz
+          cd redis-${{ inputs.redis_version }}
+          
+          make MALLOC=libc
+          
+          mkdir ../bin
+          cp src/redis-server.exe ../bin/${{ matrix.artifact_name }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: bin/${{ matrix.artifact_name }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2.5
+        with:
+          tag_name: v${{ inputs.redis_version }}
+          name: Redis ${{ inputs.redis_version }} Binaries
+          files: |
+            artifacts/redis-server-linux/redis-server-linux
+            artifacts/redis-server-macos/redis-server-macos
+            artifacts/redis-server.exe/redis-server.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
