@@ -3,10 +3,10 @@ name: Build Redis Binaries
 on:
   workflow_dispatch:
     inputs:
-      redis_version:
-        description: 'Redis version to build'
+      redis_url:
+        description: 'Redis source url to fetch'
         required: true
-        default: '8.2.4'
+        default: 'https://github.com/YaronKoresh/redis/archive/refs/heads/unstable.zip'
 
 jobs:
   build:
@@ -32,9 +32,10 @@ jobs:
       - name: Build on Linux
         if: matrix.target_os == 'linux'
         run: |
-          wget http://download.redis.io/releases/redis-${{ inputs.redis_version }}.tar.gz
-          tar xvzf redis-${{ inputs.redis_version }}.tar.gz
-          cd redis-${{ inputs.redis_version }}
+          wget ${{ inputs.redis_url }} -O redis-source.tar.gz
+          mkdir redis-source
+          tar xvzf redis-source.tar.gz -C redis-source --strip-components=1
+          cd redis-source
           make
           strip src/redis-server
           mkdir ../bin
@@ -43,9 +44,10 @@ jobs:
       - name: Build on macOS
         if: matrix.target_os == 'macos'
         run: |
-          wget http://download.redis.io/releases/redis-${{ inputs.redis_version }}.tar.gz
-          tar xvzf redis-${{ inputs.redis_version }}.tar.gz
-          cd redis-${{ inputs.redis_version }}
+          wget ${{ inputs.redis_url }} -O redis-source.tar.gz
+          mkdir redis-source
+          tar xvzf redis-source.tar.gz -C redis-source --strip-components=1
+          cd redis-source
           make
           strip src/redis-server
           mkdir ../bin
@@ -68,10 +70,10 @@ jobs:
         if: matrix.target_os == 'windows'
         shell: msys2 {0}
         run: |
-          wget http://download.redis.io/releases/redis-${{ inputs.redis_version }}.tar.gz
-          tar xvzf redis-${{ inputs.redis_version }}.tar.gz
-          cd redis-${{ inputs.redis_version }}
-          
+          wget ${{ inputs.redis_url }} -O redis-source.tar.gz
+          mkdir redis-source
+          tar xvzf redis-source.tar.gz -C redis-source --strip-components=1
+          cd redis-source
           make MALLOC=libc CFLAGS="-O3"
           
           mkdir ../bin
