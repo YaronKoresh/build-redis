@@ -98,7 +98,7 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make MALLOC=libc CFLAGS="-O3"
+          make MALLOC=libc CFLAGS="-funsigned-char -O3"
           mkdir ../../bin
           cp src/redis-server.exe ../../bin/${{ matrix.artifact_name }}
 
