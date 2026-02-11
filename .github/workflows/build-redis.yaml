@@ -15,18 +15,23 @@ jobs:
   build:
     name: Build Redis for ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    container: 
+      image: ${{ matrix.container_image }}
     strategy:
       matrix:
         include:
-          - os: ubuntu-22.04
+          - os: ubuntu-latest
             artifact_name: redis-server-linux
             target_os: linux
+            container_image: ubuntu:20.04
           - os: macos-latest
             artifact_name: redis-server-macos
             target_os: macos
+            container_image:
           - os: windows-latest
             artifact_name: redis-server.exe
             target_os: windows
+            container_image:
 
     steps:
       - name: Checkout Code
@@ -35,6 +40,8 @@ jobs:
       - name: Build on Linux
         if: matrix.target_os == 'linux'
         run: |
+          apt-get update
+          apt-get install -y wget make gcc build-essential unzip
           mkdir redis_build
           cd redis_build
           wget ${{ inputs.redis_url }}
