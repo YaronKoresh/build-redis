@@ -45,6 +45,7 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
+          make -C deps
           make -j$(nproc)
           strip src/redis-server
           mkdir ../../bin
@@ -63,6 +64,7 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
+          make -C deps
           make -j$(sysctl -n hw.ncpu)
           strip src/redis-server
           mkdir ../../bin
