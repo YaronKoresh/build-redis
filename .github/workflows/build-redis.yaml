@@ -39,6 +39,7 @@ jobs:
 
       - name: Build on Linux
         if: matrix.target_os == 'linux'
+        shell: bash
         run: |
           apt-get update
           apt-get install -y wget make gcc build-essential unzip
@@ -59,6 +60,7 @@ jobs:
 
       - name: Build on macOS
         if: matrix.target_os == 'macos'
+        shell: bash
         run: |
           mkdir redis_build
           cd redis_build
