@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-20.04
             artifact_name: redis-server-linux
             target_os: linux
           - os: macos-latest
@@ -45,7 +45,7 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make
+          make -j$(nproc)
           strip src/redis-server
           mkdir ../../bin
           cp src/redis-server ../../bin/${{ matrix.artifact_name }}
@@ -63,7 +63,7 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make
+          make -j$(sysctl -n hw.ncpu)
           strip src/redis-server
           mkdir ../../bin
           cp src/redis-server ../../bin/${{ matrix.artifact_name }}
