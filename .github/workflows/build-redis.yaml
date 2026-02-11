@@ -45,8 +45,7 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make -C deps -j1
-          make -j$(nproc)
+          make
           strip src/redis-server
           mkdir ../../bin
           cp src/redis-server ../../bin/${{ matrix.artifact_name }}
@@ -64,8 +63,7 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make -C deps -j1
-          make -j$(sysctl -n hw.ncpu)
+          make
           strip src/redis-server
           mkdir ../../bin
           cp src/redis-server ../../bin/${{ matrix.artifact_name }}
