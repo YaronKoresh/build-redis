@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           export DEBIAN_FRONTEND=noninteractive
-          apt-get update && apt-get install -y wget make gcc build-essential unzip
+          apt-get update && apt-get install -y wget make gcc build-essential unzip g++
           mkdir redis_build && cd redis_build
           wget ${{ inputs.redis_url }}
           filename=$(basename "${{ inputs.redis_url }}")
@@ -50,7 +50,7 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make -C src redis-server redis-cli MALLOC=libc LDFLAGS="-static"
+          make -C src redis-server redis-cli MALLOC=libc USE_STATIC_LIBS=yes
           strip src/redis-server src/redis-cli
           mkdir -p ${{ github.workspace }}/bin
           cp src/redis-server src/redis-cli ${{ github.workspace }}/bin/
@@ -84,7 +84,15 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: mingw-w64-x86_64-gcc make wget unzip
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-make
+            wget
+            unzip
+            pkg-config
+            python3
+            git
+            tar
 
       - name: Build on Windows
         if: matrix.target_os == 'windows'
