@@ -39,6 +39,7 @@ jobs:
         if: matrix.target_os == 'linux'
         shell: bash
         run: |
+          export DEBIAN_FRONTEND=noninteractive
           apt-get update && apt-get install -y wget make gcc build-essential unzip
           mkdir redis_build && cd redis_build
           wget ${{ inputs.redis_url }}
@@ -49,7 +50,7 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make MALLOC=libc LDFLAGS="-static"
+          make -C src redis-server redis-cli MALLOC=libc LDFLAGS="-static"
           strip src/redis-server src/redis-cli
           mkdir -p ${{ github.workspace }}/bin
           cp src/redis-server src/redis-cli ${{ github.workspace }}/bin/
@@ -67,11 +68,11 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make MALLOC=libc CFLAGS="-arch x86_64" LDFLAGS="-arch x86_64"
+          make -C src redis-server redis-cli MALLOC=libc CFLAGS="-arch x86_64" LDFLAGS="-arch x86_64"
           mv src/redis-server src/redis-server-x86
           mv src/redis-cli src/redis-cli-x86
-          make clean
-          make MALLOC=libc CFLAGS="-arch arm64" LDFLAGS="-arch arm64"
+          make -C src clean
+          make -C src redis-server redis-cli MALLOC=libc CFLAGS="-arch arm64" LDFLAGS="-arch arm64"
           mkdir -p ${{ github.workspace }}/bin
           lipo -create src/redis-server-x86 src/redis-server -output ${{ github.workspace }}/bin/redis-server
           lipo -create src/redis-cli-x86 src/redis-cli -output ${{ github.workspace }}/bin/redis-cli
@@ -98,7 +99,7 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make MALLOC=libc CFLAGS="-funsigned-char" LDFLAGS="-static -static-libgcc"
+          make -C src redis-server.exe redis-cli.exe MALLOC=libc CFLAGS="-funsigned-char" LDFLAGS="-static -static-libgcc"
           mkdir -p ${{ github.workspace }}/bin
           cp src/redis-server.exe src/redis-cli.exe ${{ github.workspace }}/bin/
 
