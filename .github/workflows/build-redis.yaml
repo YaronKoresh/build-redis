@@ -53,7 +53,7 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make
+          make MALLOC=libc LDFLAGS="-static"
           strip src/redis-server
           mkdir ../../bin
           cp src/redis-server ../../bin/${{ matrix.artifact_name }}
@@ -107,7 +107,7 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make MALLOC=libc CFLAGS="-funsigned-char -O3"
+          make MALLOC=libc CFLAGS="-funsigned-char -O3" LDFLAGS="-static"
           mkdir ../../bin
           cp src/redis-server.exe ../../bin/${{ matrix.artifact_name }}
 
