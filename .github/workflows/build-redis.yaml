@@ -77,8 +77,8 @@ jobs:
           msystem: MINGW64
           update: true
           install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-make
+            gcc
+            make
             wget
             unzip
             pkg-config
@@ -95,12 +95,14 @@ jobs:
           filename=$(basename "${{ inputs.redis_url }}")
           [[ "$filename" == *.zip ]] && unzip "$filename" || tar xvzf "$filename"
           cd */
-          mingw32-make -C src redis-server redis-cli \
+          make -C src redis-server redis-cli \
             MALLOC=libc \
-            CFLAGS="-funsigned-char" \
+            OPTIMIZATION="-O3" \
+            CFLAGS="-Wno-error -funsigned-char" \
             LDFLAGS="-static -static-libgcc -static-libstdc++"
           mkdir -p ../../bin_out
           cp src/redis-server.exe src/redis-cli.exe ../../bin_out/
+          cp /usr/bin/msys-2.0.dll ../../bin_out/
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -127,6 +129,7 @@ jobs:
           test -f release_files/redis-macos/redis-cli
           test -f release_files/redis-windows/redis-server.exe
           test -f release_files/redis-windows/redis-cli.exe
+          test -f release_files/redis-windows/msys-2.0.dll
 
       - name: Prepare Files for Release
         run: |
@@ -137,6 +140,7 @@ jobs:
           cp release_files/redis-macos/redis-cli final_assets/redis-cli-macos
           cp release_files/redis-windows/redis-server.exe final_assets/redis-server-windows.exe
           cp release_files/redis-windows/redis-cli.exe final_assets/redis-cli-windows.exe
+          cp release_files/redis-windows/msys-2.0.dll final_assets/msys-2.0.dll
 
       - name: Create Release
         uses: softprops/action-gh-release@v2.5.0
