@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-20.04
             artifact_folder: redis-linux
             target_os: linux
             container_image: ubuntu:20.04
@@ -40,20 +40,16 @@ jobs:
         shell: bash
         run: |
           export DEBIAN_FRONTEND=noninteractive
-          apt-get update && apt-get install -y wget make gcc build-essential unzip g++
+          apt-get update && apt-get install -y wget make gcc g++ build-essential unzip
           mkdir redis_build && cd redis_build
           wget ${{ inputs.redis_url }}
           filename=$(basename "${{ inputs.redis_url }}")
-          if [[ "$filename" == *.zip ]]; then
-            unzip "$filename"
-          else
-            tar xvzf "$filename"
-          fi
+          [[ "$filename" == *.zip ]] && unzip "$filename" || tar xvzf "$filename"
           cd */
           make -C src redis-server redis-cli MALLOC=libc USE_STATIC_LIBS=yes
           strip src/redis-server src/redis-cli
-          mkdir -p ${{ github.workspace }}/bin
-          cp src/redis-server src/redis-cli ${{ github.workspace }}/bin/
+          mkdir -p ../../bin_out
+          cp src/redis-server src/redis-cli ../../bin_out/
 
       - name: Build on macOS
         if: matrix.target_os == 'macos'
@@ -62,21 +58,17 @@ jobs:
           mkdir redis_build && cd redis_build
           wget ${{ inputs.redis_url }}
           filename=$(basename "${{ inputs.redis_url }}")
-          if [[ "$filename" == *.zip ]]; then
-            unzip "$filename"
-          else
-            tar xvzf "$filename"
-          fi
+          [[ "$filename" == *.zip ]] && unzip "$filename" || tar xvzf "$filename"
           cd */
           make -C src redis-server redis-cli MALLOC=libc CFLAGS="-arch x86_64" LDFLAGS="-arch x86_64"
           mv src/redis-server src/redis-server-x86
           mv src/redis-cli src/redis-cli-x86
           make -C src clean
           make -C src redis-server redis-cli MALLOC=libc CFLAGS="-arch arm64" LDFLAGS="-arch arm64"
-          mkdir -p ${{ github.workspace }}/bin
-          lipo -create src/redis-server-x86 src/redis-server -output ${{ github.workspace }}/bin/redis-server
-          lipo -create src/redis-cli-x86 src/redis-cli -output ${{ github.workspace }}/bin/redis-cli
-          strip ${{ github.workspace }}/bin/*
+          mkdir -p ../../bin_out
+          lipo -create src/redis-server-x86 src/redis-server -output ../../bin_out/redis-server
+          lipo -create src/redis-cli-x86 src/redis-cli -output ../../bin_out/redis-cli
+          strip ../../bin_out/*
 
       - name: Setup MSYS2 (Windows)
         if: matrix.target_os == 'windows'
@@ -85,8 +77,8 @@ jobs:
           msystem: MINGW64
           update: true
           install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-make
+            gcc
+            make
             wget
             unzip
             pkg-config
@@ -101,21 +93,17 @@ jobs:
           mkdir redis_build && cd redis_build
           wget ${{ inputs.redis_url }}
           filename=$(basename "${{ inputs.redis_url }}")
-          if [[ "$filename" == *.zip ]]; then
-            unzip "$filename"
-          else
-            tar xvzf "$filename"
-          fi
+          [[ "$filename" == *.zip ]] && unzip "$filename" || tar xvzf "$filename"
           cd */
           make -C src redis-server.exe redis-cli.exe MALLOC=libc CFLAGS="-funsigned-char" LDFLAGS="-static -static-libgcc"
-          mkdir -p ${{ github.workspace }}/bin
-          cp src/redis-server.exe src/redis-cli.exe ${{ github.workspace }}/bin/
+          mkdir -p ../../bin_out
+          cp src/redis-server.exe src/redis-cli.exe ../../bin_out/
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_folder }}
-          path: bin/
+          path: bin_out/
 
   release:
     name: Create Release
@@ -123,12 +111,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download All Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: release_files
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.5.0
         with:
           tag_name: v${{ inputs.redis_version }}
           files: |
