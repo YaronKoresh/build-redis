@@ -8,7 +8,7 @@ on:
         required: true
         default: 'https://github.com/YaronKoresh/redis/archive/refs/heads/unstable.zip'
       redis_version:
-        description: 'Version tag for the release (e.g. 8.4.1 or 2026.2.10)'
+        description: 'Version tag for the release'
         required: true
 
 jobs:
@@ -21,17 +21,15 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: redis-server-linux
+            artifact_folder: redis-linux
             target_os: linux
-            container_image: ubuntu:20.04
+            container_image: debian:stretch
           - os: macos-latest
-            artifact_name: redis-server-macos
+            artifact_folder: redis-macos
             target_os: macos
-            container_image:
           - os: windows-latest
-            artifact_name: redis-server.exe
+            artifact_folder: redis-windows
             target_os: windows
-            container_image:
 
     steps:
       - name: Checkout Code
@@ -41,10 +39,8 @@ jobs:
         if: matrix.target_os == 'linux'
         shell: bash
         run: |
-          apt-get update
-          apt-get install -y wget make gcc build-essential unzip
-          mkdir redis_build
-          cd redis_build
+          apt-get update && apt-get install -y wget make gcc build-essential unzip
+          mkdir redis_build && cd redis_build
           wget ${{ inputs.redis_url }}
           filename=$(basename "${{ inputs.redis_url }}")
           if [[ "$filename" == *.zip ]]; then
@@ -54,16 +50,15 @@ jobs:
           fi
           cd */
           make MALLOC=libc LDFLAGS="-static"
-          strip src/redis-server
-          mkdir ../../bin
-          cp src/redis-server ../../bin/${{ matrix.artifact_name }}
+          strip src/redis-server src/redis-cli
+          mkdir -p ${{ github.workspace }}/bin
+          cp src/redis-server src/redis-cli ${{ github.workspace }}/bin/
 
       - name: Build on macOS
         if: matrix.target_os == 'macos'
         shell: bash
         run: |
-          mkdir redis_build
-          cd redis_build
+          mkdir redis_build && cd redis_build
           wget ${{ inputs.redis_url }}
           filename=$(basename "${{ inputs.redis_url }}")
           if [[ "$filename" == *.zip ]]; then
@@ -72,10 +67,15 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make
-          strip src/redis-server
-          mkdir ../../bin
-          cp src/redis-server ../../bin/${{ matrix.artifact_name }}
+          make MALLOC=libc CFLAGS="-arch x86_64" LDFLAGS="-arch x86_64"
+          mv src/redis-server src/redis-server-x86
+          mv src/redis-cli src/redis-cli-x86
+          make clean
+          make MALLOC=libc CFLAGS="-arch arm64" LDFLAGS="-arch arm64"
+          mkdir -p ${{ github.workspace }}/bin
+          lipo -create src/redis-server-x86 src/redis-server -output ${{ github.workspace }}/bin/redis-server
+          lipo -create src/redis-cli-x86 src/redis-cli -output ${{ github.workspace }}/bin/redis-cli
+          strip ${{ github.workspace }}/bin/*
 
       - name: Setup MSYS2 (Windows)
         if: matrix.target_os == 'windows'
@@ -83,22 +83,13 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: >-
-            pkg-config
-            git
-            make
-            gcc
-            tar
-            wget
-            unzip
-            python3
+          install: mingw-w64-x86_64-gcc make wget unzip
 
       - name: Build on Windows
         if: matrix.target_os == 'windows'
         shell: msys2 {0}
         run: |
-          mkdir redis_build
-          cd redis_build
+          mkdir redis_build && cd redis_build
           wget ${{ inputs.redis_url }}
           filename=$(basename "${{ inputs.redis_url }}")
           if [[ "$filename" == *.zip ]]; then
@@ -107,15 +98,15 @@ jobs:
             tar xvzf "$filename"
           fi
           cd */
-          make MALLOC=libc CFLAGS="-funsigned-char -O3" LDFLAGS="-static"
-          mkdir ../../bin
-          cp src/redis-server.exe ../../bin/${{ matrix.artifact_name }}
+          make MALLOC=libc CFLAGS="-funsigned-char" LDFLAGS="-static -static-libgcc"
+          mkdir -p ${{ github.workspace }}/bin
+          cp src/redis-server.exe src/redis-cli.exe ${{ github.workspace }}/bin/
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: bin/${{ matrix.artifact_name }}
+          name: ${{ matrix.artifact_folder }}
+          path: bin/
 
   release:
     name: Create Release
@@ -123,18 +114,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download All Artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          path: release_files
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2.5.0
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ inputs.redis_version }}
-          name: Redis ${{ inputs.redis_version }} Binaries
           files: |
-            artifacts/redis-server-linux/redis-server-linux
-            artifacts/redis-server-macos/redis-server-macos
-            artifacts/redis-server.exe/redis-server.exe
+            release_files/redis-linux/*
+            release_files/redis-macos/*
+            release_files/redis-windows/*
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_PAT }}
