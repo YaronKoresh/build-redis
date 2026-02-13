@@ -77,8 +77,8 @@ jobs:
           msystem: MINGW64
           update: true
           install: >-
-            gcc
-            make
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-make
             wget
             unzip
             pkg-config
@@ -95,7 +95,10 @@ jobs:
           filename=$(basename "${{ inputs.redis_url }}")
           [[ "$filename" == *.zip ]] && unzip "$filename" || tar xvzf "$filename"
           cd */
-          make -C src redis-server redis-cli MALLOC=libc CFLAGS="-funsigned-char" LDFLAGS="-static -static-libgcc"
+          mingw32-make -C src redis-server redis-cli \
+            MALLOC=libc \
+            CFLAGS="-funsigned-char" \
+            LDFLAGS="-static -static-libgcc -static-libstdc++"
           mkdir -p ../../bin_out
           cp src/redis-server.exe src/redis-cli.exe ../../bin_out/
 
