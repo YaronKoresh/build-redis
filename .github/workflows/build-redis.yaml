@@ -125,13 +125,23 @@ jobs:
           test -f release_files/redis-windows/redis-server.exe
           test -f release_files/redis-windows/redis-cli.exe
 
+      - name: Prepare Files for Release
+        run: |
+          mkdir -p final_assets
+          cp release_files/redis-linux/redis-server final_assets/redis-server-linux
+          cp release_files/redis-linux/redis-cli final_assets/redis-cli-linux
+          cp release_files/redis-macos/redis-server final_assets/redis-server-macos
+          cp release_files/redis-macos/redis-cli final_assets/redis-cli-macos
+          cp release_files/redis-windows/redis-server.exe final_assets/redis-server-windows.exe
+          cp release_files/redis-windows/redis-cli.exe final_assets/redis-cli-windows.exe
+
       - name: Create Release
         uses: softprops/action-gh-release@v2.5.0
         with:
           tag_name: v${{ inputs.redis_version }}
           files: |
-            release_files/redis-linux/*
-            release_files/redis-macos/*
-            release_files/redis-windows/*
+            final_assets/redis-linux/*
+            final_assets/redis-macos/*
+            final_assets/redis-windows/*
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_PAT }}
