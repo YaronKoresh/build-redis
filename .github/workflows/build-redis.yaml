@@ -23,7 +23,7 @@ jobs:
           - os: ubuntu-latest
             artifact_folder: redis-linux
             target_os: linux
-            container_image: debian:buster
+            container_image: ubuntu:20.04
           - os: macos-latest
             artifact_folder: redis-macos
             target_os: macos
