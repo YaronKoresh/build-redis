@@ -95,7 +95,7 @@ jobs:
           filename=$(basename "${{ inputs.redis_url }}")
           [[ "$filename" == *.zip ]] && unzip "$filename" || tar xvzf "$filename"
           cd */
-          make -C src redis-server.exe redis-cli.exe MALLOC=libc CFLAGS="-funsigned-char" LDFLAGS="-static -static-libgcc"
+          make -C src redis-server redis-cli MALLOC=libc CFLAGS="-funsigned-char" LDFLAGS="-static -static-libgcc"
           mkdir -p ../../bin_out
           cp src/redis-server.exe src/redis-cli.exe ../../bin_out/
 
@@ -103,7 +103,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_folder }}
-          path: bin_out/
+          path: bin_out/*
 
   release:
     name: Create Release
@@ -114,6 +114,16 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           path: release_files
+
+      - name: Verify Artifacts
+        run: |
+          ls -R release_files
+          test -f release_files/redis-linux/redis-server
+          test -f release_files/redis-linux/redis-cli
+          test -f release_files/redis-macos/redis-server
+          test -f release_files/redis-macos/redis-cli
+          test -f release_files/redis-windows/redis-server.exe
+          test -f release_files/redis-windows/redis-cli.exe
 
       - name: Create Release
         uses: softprops/action-gh-release@v2.5.0
