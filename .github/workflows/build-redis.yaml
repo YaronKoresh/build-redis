@@ -139,9 +139,6 @@ jobs:
         uses: softprops/action-gh-release@v2.5.0
         with:
           tag_name: v${{ inputs.redis_version }}
-          files: |
-            final_assets/redis-linux/*
-            final_assets/redis-macos/*
-            final_assets/redis-windows/*
+          files: final_assets/*
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_PAT }}
