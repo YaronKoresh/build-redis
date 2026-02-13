@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-latest
             artifact_folder: redis-linux
             target_os: linux
             container_image: ubuntu:20.04
